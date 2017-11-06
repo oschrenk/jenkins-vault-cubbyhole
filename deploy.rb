@@ -1,8 +1,10 @@
 require 'vault'
 
 vault_cubbyhole = ENV['VAULT_CUBBYHOLE'] || "app-token"
-vault_address = ENV['VAULT_ADDR'] || "http://127.0.0.1:8200"
-vault_token = ENV['VAULT_TOKEN']
+vault_ttl       = ENV['VAULT_TTL'] || "60s"
+vault_address   = ENV['VAULT_ADDR'] || "http://127.0.0.1:8200"
+vault_token     = ENV['VAULT_TOKEN']
+
 
 puts "Connecting to #{ENV['VAULT_ADDR']}"
 
@@ -14,7 +16,7 @@ deployer_client = Vault::Client.new(
 )
 
 # create temp token can only be used 2 times, and has a short ttl.
-temp_token = deployer_client.auth_token.create({ :ttl => '120s', :num_uses => 2 })
+temp_token = deployer_client.auth_token.create({ :ttl => vault_ttl, :num_uses => 2 })
 # permanent token can be used any number of times w/ no ttl.
 perm_token = deployer_client.auth_token.create({})
 
