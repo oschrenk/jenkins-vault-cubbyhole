@@ -1,4 +1,5 @@
-FROM ruby:alpine
+FROM ruby
 COPY . /app 
-RUN cd /app && bundle install
+WORKDIR /app
+RUN bundle install
 CMD ruby /app/deploy.rb

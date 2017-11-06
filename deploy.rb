@@ -5,6 +5,13 @@ vault_ttl       = ENV['VAULT_TTL'] || "60s"
 vault_address   = ENV['VAULT_ADDR'] || "http://127.0.0.1:8200"
 vault_token     = ENV['VAULT_TOKEN']
 
+input_path  = ENV['INPUT_PATH']  || "/work/service.json"
+output_path = ENV['OUTPUT_PATH'] || "/work/service-with-token.json"
+env_key     = ENV['ENV_KEY']     || "VAULT_TEMP_TOKEN"
+
+if (vault_token.nil?)
+  abort("No VAULT_TOKEN")
+end
 
 puts "Connecting to #{ENV['VAULT_ADDR']}"
 
@@ -20,8 +27,6 @@ temp_token = deployer_client.auth_token.create({ :ttl => vault_ttl, :num_uses =>
 # permanent token can be used any number of times w/ no ttl.
 perm_token = deployer_client.auth_token.create({})
 
-puts "The temp_token is #{temp_token.auth.client_token}"
-
 # using the first use of token #1, store the permanent token in cubbyhole
 temp_client = Vault::Client.new(
   address: vault_address,
@@ -30,3 +35,13 @@ temp_client = Vault::Client.new(
 temp_client.logical.write(
   "cubbyhole/#{vault_cubbyhole}",
   { :token => perm_token.auth.client_token})
+
+# inject the temp token into the service definition
+service = JSON.parse(File.read(input_path))
+env_variable = { 'env' => {env_key => temp_token.auth.client_token}}
+new_service = service.merge(env_variable)
+
+File.open(output_path, "w") do |f|
+  f.write(JSON.pretty_generate(new_service))
+end
+
