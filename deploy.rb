@@ -38,10 +38,16 @@ temp_client.logical.write(
 
 # inject the temp token into the service definition
 service = JSON.parse(File.read(input_path))
-env_variable = { 'env' => {env_key => temp_token.auth.client_token}}
-new_service = service.merge(env_variable)
+old_env = service["env"]
+if (old_env.nil?)
+  old_env = {}
+end
+
+new_env_variable = {env_key => temp_token.auth.client_token}
+new_env = old_env.merge(new_env_variable)
+service["env"] = new_env
 
 File.open(output_path, "w") do |f|
-  f.write(JSON.pretty_generate(new_service))
+  f.write(JSON.pretty_generate(service))
 end
 
